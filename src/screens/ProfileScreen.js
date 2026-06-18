@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import api, { API_BASE_URL } from '../config/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import AdInterstitial from '../components/AdInterstitial';
 
 export default function ProfileScreen({ navigation }) {
   const { user, logout, updateUser } = useContext(AuthContext);
@@ -250,6 +251,7 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.scrollContent}>
+      <AdInterstitial pageKey="profile" />
       {/* Title */}
       <View style={[styles.header, isRTL && styles.rowRTL]}>
         <Text style={[styles.title, { color: theme.text }]}>{t('profile')}</Text>

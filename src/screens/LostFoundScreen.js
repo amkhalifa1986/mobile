@@ -17,6 +17,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import api, { API_BASE_URL } from '../config/api';
 import { Ionicons } from '@expo/vector-icons';
+import AdInterstitial from '../components/AdInterstitial';
 
 export default function LostFoundScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -216,6 +217,7 @@ export default function LostFoundScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, { direction: isRTL ? 'rtl' : 'ltr' }]}>
+      <AdInterstitial pageKey="lostFound" />
       <View style={[styles.header, isRTL && { alignItems: 'flex-end' }]}>
         <Text style={[styles.title, isRTL && styles.textRTL]}>{t('lostFound')}</Text>
         <Text style={[styles.subtitle, isRTL && styles.textRTL]}>{t('lostFoundSubtitle')}</Text>

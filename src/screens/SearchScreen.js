@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../config/api';
 import { Ionicons } from '@expo/vector-icons';
+import AdInterstitial from '../components/AdInterstitial';
 
 export default function SearchScreen({ navigation }) {
   const { t, isRTL } = useLanguage();
@@ -114,6 +115,7 @@ export default function SearchScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AdInterstitial pageKey="search" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.title, isRTL && styles.textRTL]}>{t('searchTrains')}</Text>
         <Text style={[styles.subtitle, isRTL && styles.textRTL]}>

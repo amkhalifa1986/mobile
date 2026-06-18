@@ -17,6 +17,7 @@ import * as Location from 'expo-location';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../config/api';
 import { Ionicons } from '@expo/vector-icons';
+import AdInterstitial from '../components/AdInterstitial';
 
 export default function SuggestionsScreen({ navigation }) {
   const { t, isRTL } = useLanguage();
@@ -338,6 +339,7 @@ export default function SuggestionsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AdInterstitial pageKey="suggestions" />
       <View style={[styles.header, isRTL && styles.alignRight]}>
         <Text style={[styles.title, isRTL && styles.textRight]}>{t('suggestions')}</Text>
         <Text style={[styles.subtitle, isRTL && styles.textRight]}>

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../config/api';
 import { Ionicons } from '@expo/vector-icons';
+import AdInterstitial from '../components/AdInterstitial';
 
 export default function TrainDetailsScreen({ route, navigation }) {
   const { id } = route.params || {};
@@ -209,6 +210,7 @@ export default function TrainDetailsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AdInterstitial pageKey="trainDetails" instanceId={id} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Train Header Card */}
         <View style={styles.headerCard}>

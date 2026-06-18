@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../config/api';
 import signalrService from '../services/signalrService';
 import { Ionicons } from '@expo/vector-icons';
+import AdInterstitial from '../components/AdInterstitial';
 
 export default function DashboardScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -100,6 +101,7 @@ export default function DashboardScreen({ navigation }) {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
+      <AdInterstitial pageKey="dashboard" />
       {/* ── Welcome Row ── */}
       <View style={[styles.navbar, isRTL && styles.rowRTL]}>
         <View style={[styles.userInfo, isRTL && styles.rowRTL]}>

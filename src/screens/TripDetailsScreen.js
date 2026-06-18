@@ -8,6 +8,7 @@ import api, { API_BASE_URL } from '../config/api';
 import signalrService from '../services/signalrService';
 import locationService from '../services/locationService';
 import { Ionicons } from '@expo/vector-icons';
+import AdInterstitial from '../components/AdInterstitial';
 
 export default function TripDetailsScreen({ route, navigation }) {
   const { id } = route.params || {};
@@ -348,6 +349,7 @@ export default function TripDetailsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AdInterstitial pageKey="tripDetails" instanceId={id} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Trip Header */}
         <View style={styles.headerCard}>
