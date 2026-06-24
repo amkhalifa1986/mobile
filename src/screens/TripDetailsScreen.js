@@ -9,10 +9,13 @@ import signalrService from '../services/signalrService';
 import locationService from '../services/locationService';
 import { Ionicons } from '@expo/vector-icons';
 import AdInterstitial from '../components/AdInterstitial';
+import { useTheme } from '../context/ThemeContext';
 
 export default function TripDetailsScreen({ route, navigation }) {
   const { id } = route.params || {};
   const { t, isRTL } = useLanguage();
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
   const { user } = useContext(AuthContext);
 
   const [trip, setTrip] = useState(null);
@@ -89,6 +92,21 @@ export default function TripDetailsScreen({ route, navigation }) {
         if (!prev) return null;
         const updateId = update.id || update.Id;
         if (prev.recentUpdates?.some((u) => (u.id || u.Id) === updateId)) return prev;
+
+        let shouldRefresh = false;
+        if (!update.authorId && update.statusTag) {
+          const validStatuses = ['Scheduled', 'Departed', 'InTransit', 'Arrived', 'Cancelled', 'Delayed'];
+          if (validStatuses.some(s => s.toLowerCase() === update.statusTag.toLowerCase())) {
+            shouldRefresh = true;
+          }
+        }
+
+        if (shouldRefresh) {
+          setTimeout(() => {
+            fetchTripDetails();
+          }, 100);
+        }
+
         return {
           ...prev,
           recentUpdates: [update, ...(prev.recentUpdates || [])],
@@ -192,7 +210,14 @@ export default function TripDetailsScreen({ route, navigation }) {
   // Follower crowdsourced prompts
   const handlePromptSubmit = async (status) => {
     try {
-      await api.put(`/api/trips/${trip.id}/status`, { status });
+      const res = await api.put(`/api/trips/${trip.id}/status`, { status });
+      if (res && res.isSuccess && res.data) {
+        setTrip(prev => prev ? { 
+          ...prev, 
+          status: res.data.status,
+          statusDetails: res.data.statusDetails
+        } : null);
+      }
       Alert.alert(t('Success'), isRTL ? 'تم إرسال التحقق من الحالة بنجاح!' : 'Status verification sent successfully!');
       fetchTripDetails();
     } catch (err) {
@@ -362,6 +387,36 @@ export default function TripDetailsScreen({ route, navigation }) {
               <Text style={[styles.tripDate, isRTL && styles.textRTL]}>
                 {trip.tripDate} • {trip.followerCount} {isRTL ? 'متابع' : 'Followers'}
               </Text>
+              <View style={[styles.badgesRow, { marginTop: 8, marginBottom: 0 }, isRTL && styles.rowRTL]}>
+                <View style={{ 
+                  backgroundColor: trip.statusDetails?.color ? `${trip.statusDetails.color}20` : '#1e1e2d', 
+                  borderColor: trip.statusDetails?.color ? `${trip.statusDetails.color}40` : '#334155',
+                  borderWidth: 1,
+                  borderRadius: 4,
+                  paddingHorizontal: 7,
+                  paddingVertical: 2
+                }}>
+                  <Text style={{ color: trip.statusDetails?.color || '#94a3b8', fontSize: 10, fontWeight: '700' }}>
+                    {isRTL 
+                      ? (trip.statusDetails?.nameAr || trip.status) 
+                      : (trip.statusDetails?.nameEn || trip.status)}
+                  </Text>
+                </View>
+                {(isRTL ? trip.trainTypeNameAr : trip.trainTypeNameEn) && (
+                  <View style={{ 
+                    backgroundColor: '#10b98120', 
+                    borderColor: '#10b98140', 
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    paddingHorizontal: 7,
+                    paddingVertical: 2
+                  }}>
+                    <Text style={{ color: '#10b981', fontSize: 10, fontWeight: '700' }}>
+                      {isRTL ? trip.trainTypeNameAr : trip.trainTypeNameEn}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
             <TouchableOpacity 
               style={[styles.followBtn, trip.isFollowedByCurrentUser && styles.followBtnActive]} 
@@ -429,9 +484,9 @@ export default function TripDetailsScreen({ route, navigation }) {
             )}
 
             {/* Draw Station Pins */}
-            {trip.routeStops?.map((stop) => (
+            {trip.routeStops?.map((stop, index) => (
               <Marker
-                key={stop.id}
+                key={`${stop.stopId || stop.id}-${stop.stopOrder || index}`}
                 coordinate={{ latitude: stop.latitude, longitude: stop.longitude }}
                 title={isRTL ? stop.stopNameAr : stop.stopNameEn}
                 description={stop.stopCode}
@@ -535,7 +590,7 @@ export default function TripDetailsScreen({ route, navigation }) {
         </View>
         <View style={styles.timelineCard}>
           {trip.routeStops?.map((stop, index) => (
-            <View key={stop.id} style={[styles.timelineRow, isRTL && styles.rowRTL]}>
+            <View key={`${stop.stopId || stop.id}-${stop.stopOrder || index}`} style={[styles.timelineRow, isRTL && styles.rowRTL]}>
               <View style={styles.timelineGraphic}>
                 <View style={[styles.timelineLineTop, index === 0 && styles.hiddenLine]} />
                 <View style={styles.timelineDot} />
@@ -756,10 +811,10 @@ const mapStyleJson = [
   { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#0a0a14" }] }
 ];
 
-const styles = StyleSheet.create({
+const getStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: theme.background,
   },
   scrollContent: {
     padding: 16,
@@ -767,19 +822,19 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: theme.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: theme.background,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   errorText: {
-    color: '#f87171',
+    color: theme.errorText,
     fontSize: 16,
     textAlign: 'center',
     marginTop: 16,
@@ -796,8 +851,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     padding: 20,
@@ -823,20 +878,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   trainName: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     fontWeight: '600',
     marginTop: 2,
   },
   tripDate: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontSize: 12,
     marginTop: 4,
   },
   followBtn: {
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.border,
     width: 44,
     height: 44,
     borderRadius: 12,
@@ -849,8 +904,8 @@ const styles = StyleSheet.create({
   },
   promptBanner: {
     flexDirection: 'row',
-    backgroundColor: '#f59e0b15',
-    borderColor: '#f59e0b40',
+    backgroundColor: theme.warningBg,
+    borderColor: theme.warningBorder,
     borderWidth: 1,
     borderRadius: 12,
     padding: 16,
@@ -858,7 +913,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   promptTitle: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 10,
@@ -883,7 +938,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     marginBottom: 20,
-    borderColor: '#1e1e2d',
+    borderColor: theme.border,
     borderWidth: 1,
   },
   map: {
@@ -918,8 +973,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   floatingBtn: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     width: 40,
     height: 40,
@@ -936,8 +991,8 @@ const styles = StyleSheet.create({
     bottom: 16,
     left: 16,
     right: 16,
-    backgroundColor: '#12121ae0',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground + 'e0',
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
@@ -965,24 +1020,24 @@ const styles = StyleSheet.create({
   },
   hudCard: {
     flex: 1,
-    backgroundColor: '#0a0a0f80',
+    backgroundColor: theme.background + '80',
     borderRadius: 6,
     padding: 8,
     alignItems: 'center',
   },
   hudVal: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     fontWeight: '800',
   },
   hudLbl: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontSize: 10,
     marginTop: 2,
   },
   broadcastCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     padding: 16,
@@ -994,12 +1049,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   broadcastTitle: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 15,
     fontWeight: 'bold',
   },
   broadcastSub: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontSize: 12,
     marginTop: 4,
     lineHeight: 16,
@@ -1011,14 +1066,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   sectionTitle: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 8,
   },
   timelineCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
@@ -1035,12 +1090,12 @@ const styles = StyleSheet.create({
   },
   timelineLineTop: {
     width: 2,
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     flex: 1,
   },
   timelineLineBottom: {
     width: 2,
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     flex: 1,
   },
   hiddenLine: {
@@ -1060,30 +1115,30 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   stopName: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
     fontWeight: '600',
   },
   stopTime: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontSize: 12,
     marginTop: 2,
   },
   postCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
   },
   postInput: {
-    backgroundColor: '#0a0a0f',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.background,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
     textAlignVertical: 'top',
     height: 70,
@@ -1098,15 +1153,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#0a0a0f',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.background,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 6,
     height: 40,
     paddingHorizontal: 12,
   },
   formSelectorText: {
-    color: '#cbd5e1',
+    color: theme.textSecondary,
     fontSize: 12,
   },
   gpsShareRow: {
@@ -1132,8 +1187,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   emptyCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 12,
     padding: 24,
@@ -1141,15 +1196,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyText: {
-    color: '#64748b',
+    color: theme.textSecondary,
   },
   reportsFeed: {
     gap: 12,
     marginBottom: 20,
   },
   feedCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 12,
     padding: 16,
@@ -1169,12 +1224,12 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#6366f130',
+    backgroundColor: theme.primary + '30',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
-    color: '#6366f1',
+    color: theme.primary,
     fontWeight: 'bold',
     fontSize: 13,
   },
@@ -1183,21 +1238,21 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   authorName: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
     fontWeight: '600',
   },
   authorSub: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontSize: 11,
     marginTop: 1,
   },
   feedTime: {
-    color: '#475569',
+    color: theme.textSecondary,
     fontSize: 11,
   },
   feedText: {
-    color: '#cbd5e1',
+    color: theme.text,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 10,
@@ -1220,7 +1275,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: '#1e1e2d',
+    borderTopColor: theme.border,
     paddingTop: 10,
   },
   thanksBtn: {
@@ -1231,7 +1286,7 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   thanksText: {
-    color: '#cbd5e1',
+    color: theme.textSecondary,
     fontSize: 12,
     marginLeft: 6,
   },
@@ -1240,7 +1295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteReportText: {
-    color: '#f87171',
+    color: theme.errorText,
     fontSize: 12,
     marginLeft: 6,
   },
@@ -1252,15 +1307,15 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   pickerModalCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     width: '100%',
     padding: 20,
   },
   pickerModalTitle: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
@@ -1269,15 +1324,15 @@ const styles = StyleSheet.create({
   pickerOption: {
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e1e2d',
+    borderBottomColor: theme.border,
     alignItems: 'center',
   },
   pickerOptionText: {
-    color: '#cbd5e1',
+    color: theme.text,
     fontSize: 15,
   },
   cancelBtn: {
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     borderRadius: 8,
     height: 44,
     justifyContent: 'center',
@@ -1285,7 +1340,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   cancelBtnText: {
-    color: '#fff',
+    color: theme.text,
     fontWeight: 'bold',
   },
 });

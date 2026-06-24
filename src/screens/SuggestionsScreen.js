@@ -448,7 +448,7 @@ export default function SuggestionsScreen({ navigation }) {
 
             <View style={styles.stopsList}>
               {selectedTrainStops.map((stop, index) => (
-                <View key={stop.id} style={[styles.stopRow, isRTL && styles.rowRTL]}>
+                <View key={`${stop.id}-${index}`} style={[styles.stopRow, isRTL && styles.rowRTL]}>
                   <View style={[styles.stopOrderCircle, isRTL ? { marginLeft: 10, marginRight: 0 } : { marginRight: 10, marginLeft: 0 }]}>
                     <Text style={styles.stopOrderText}>{index + 1}</Text>
                   </View>

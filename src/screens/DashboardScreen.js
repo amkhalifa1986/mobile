@@ -33,9 +33,9 @@ export default function DashboardScreen({ navigation }) {
       setFollowedTrips(followedRes || []);
       // Sort by scheduledDeparture (first stop) ascending so earliest trips appear first
       const sorted = (todayRes || []).slice().sort((a, b) => {
-        const ta = a.scheduledDeparture ?? a.tripDate ?? '';
-        const tb = b.scheduledDeparture ?? b.tripDate ?? '';
-        return String(ta).localeCompare(String(tb));
+        const ta = a.scheduledDeparture || '99:99:99';
+        const tb = b.scheduledDeparture || '99:99:99';
+        return ta.localeCompare(tb);
       });
       setTodayTrips(sorted);
     } catch (err) {
@@ -68,18 +68,7 @@ export default function DashboardScreen({ navigation }) {
     return () => { unsubscribe(); };
   }, []);
 
-  const getStatusBadgeStyle = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'ontime': case 'scheduled': case 'arrived':
-        return { bg: '#3b82f620', border: '#3b82f6', text: '#3b82f6' };
-      case 'delayed': case 'intransit': case 'departed':
-        return { bg: '#f59e0b20', border: '#f59e0b', text: '#f59e0b' };
-      case 'cancelled':
-        return { bg: '#374151', border: '#4b5563', text: '#9ca3af' };
-      default:
-        return { bg: '#1e1e2d', border: '#334155', text: '#94a3b8' };
-    }
-  };
+
 
   // Compute filtered trips: always today's trips, optionally filtered to followed train IDs
   const followedTrainIds = new Set(followedTrips.map(ft => ft.trainId || ft.id));
@@ -205,8 +194,14 @@ export default function DashboardScreen({ navigation }) {
       ) : (
         <View style={[styles.listContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
           {displayedTrips.map((trip, idx) => {
-            const badge = getStatusBadgeStyle(trip.status);
             const isFollowed = followedTrainIds.has(trip.trainId) || followedTrainIds.has(trip.id);
+            const badgeColor = trip.statusDetails?.color || '#94a3b8';
+            const badgeBg = trip.statusDetails?.color ? `${trip.statusDetails.color}20` : '#1e1e2d';
+            const badgeBorder = trip.statusDetails?.color ? `${trip.statusDetails.color}40` : '#334155';
+            const localizedStatus = isRTL 
+              ? (trip.statusDetails?.nameAr || trip.status) 
+              : (trip.statusDetails?.nameEn || trip.status);
+
             return (
               <TouchableOpacity
                 key={trip.id}
@@ -244,11 +239,10 @@ export default function DashboardScreen({ navigation }) {
                     </Text>
                   </View>
                 </View>
-
                 {/* Right: Status badge + chevron */}
                 <View style={[styles.statusContainer, isRTL && styles.rowRTL]}>
-                  <View style={[styles.statusBadge, { backgroundColor: badge.bg, borderColor: badge.border }]}>
-                    <Text style={[styles.statusBadgeText, { color: badge.text }]}>{t(trip.status)}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: badgeBg, borderColor: badgeBorder }]}>
+                    <Text style={[styles.statusBadgeText, { color: badgeColor }]}>{localizedStatus}</Text>
                   </View>
                   <Ionicons
                     name={isRTL ? 'chevron-back' : 'chevron-forward'}

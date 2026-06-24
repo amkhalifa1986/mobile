@@ -5,10 +5,13 @@ import { useLanguage } from '../context/LanguageContext';
 import api from '../config/api';
 import { Ionicons } from '@expo/vector-icons';
 import AdInterstitial from '../components/AdInterstitial';
+import { useTheme } from '../context/ThemeContext';
 
 export default function TrainDetailsScreen({ route, navigation }) {
   const { id } = route.params || {};
   const { t, isRTL } = useLanguage();
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
 
   const [train, setTrain] = useState(null);
   const [todayTrip, setTodayTrip] = useState(null);
@@ -235,7 +238,7 @@ export default function TrainDetailsScreen({ route, navigation }) {
               onPress={() => navigation.navigate('TripDetails', { id: todayTrip.id })}
             >
               <Ionicons name="pulse" size={20} color="#fff" style={{ marginRight: isRTL ? 0 : 8, marginLeft: isRTL ? 8 : 0 }} />
-              <Text style={styles.trackLiveText}>{t('trackLive')}</Text>
+              <Text style={styles.trackLiveText}>{isRTL ? 'رحلة اليوم' : "Today's Trip"}</Text>
             </TouchableOpacity>
           ) : (
             <View style={[styles.inactiveTripBadge, isRTL && styles.rowRTL]}>
@@ -258,7 +261,7 @@ export default function TrainDetailsScreen({ route, navigation }) {
               const isFirst = index === 0;
               const isLast = index === train.routeStops.length - 1;
               return (
-                <View key={stop.id} style={[styles.timelineItem, isRTL && styles.rowRTL]}>
+                <View key={`${stop.stopId || stop.id}-${stop.stopOrder || index}`} style={[styles.timelineItem, isRTL && styles.rowRTL]}>
                   <View style={styles.timelineGraphics}>
                     <View style={[styles.timelineLineTop, isFirst && styles.hiddenLine]} />
                     <View style={styles.timelineDot} />
@@ -471,8 +474,8 @@ export default function TrainDetailsScreen({ route, navigation }) {
               {isRTL ? 'اختر محطة الوصول' : 'Select Target Stop'}
             </Text>
             <ScrollView style={styles.pickerScroll}>
-              {train.routeStops?.map((stop) => (
-                <TouchableOpacity key={stop.id} style={styles.pickerItem} onPress={() => selectPlanStation(stop)}>
+              {train.routeStops?.map((stop, index) => (
+                <TouchableOpacity key={`${stop.stopId || stop.id}-${stop.stopOrder || index}`} style={styles.pickerItem} onPress={() => selectPlanStation(stop)}>
                   <Text style={[styles.pickerItemText, isRTL && styles.textRTL]}>
                     {isRTL ? stop.stopNameAr : stop.stopNameEn}
                   </Text>
@@ -489,10 +492,10 @@ export default function TrainDetailsScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: theme.background,
   },
   scrollContent: {
     padding: 16,
@@ -500,19 +503,19 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: theme.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: theme.background,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   errorText: {
-    color: '#f87171',
+    color: theme.errorText,
     fontSize: 16,
     textAlign: 'center',
     marginTop: 16,
@@ -529,8 +532,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     padding: 20,
@@ -564,13 +567,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   trainName: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     fontWeight: '600',
     marginTop: 2,
   },
   trainDesc: {
-    color: '#94a3b8',
+    color: theme.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 16,
@@ -592,14 +595,14 @@ const styles = StyleSheet.create({
   inactiveTripBadge: {
     flexDirection: 'row',
     height: 44,
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
   },
   inactiveTripText: {
-    color: '#94a3b8',
+    color: theme.textSecondary,
     fontSize: 14,
   },
   sectionHeader: {
@@ -609,14 +612,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   sectionTitle: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 8,
   },
   timelineCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     paddingVertical: 20,
@@ -635,12 +638,12 @@ const styles = StyleSheet.create({
   },
   timelineLineTop: {
     width: 2,
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     flex: 1,
   },
   timelineLineBottom: {
     width: 2,
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     flex: 1,
   },
   hiddenLine: {
@@ -652,7 +655,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#6366f1',
     borderWidth: 2,
-    borderColor: '#12121a',
+    borderColor: theme.cardBackground,
     marginVertical: 4,
   },
   timelineContent: {
@@ -663,18 +666,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   timelineTimes: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontSize: 12,
     marginTop: 4,
   },
   noStopsText: {
-    color: '#64748b',
+    color: theme.textSecondary,
     textAlign: 'center',
     padding: 20,
   },
   followCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     padding: 16,
@@ -692,13 +695,13 @@ const styles = StyleSheet.create({
   },
   activePlanDayRow: {
     flexDirection: 'row',
-    backgroundColor: '#0a0a0f',
+    backgroundColor: theme.background,
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
   },
   activePlanDayName: {
-    color: '#fff',
+    color: theme.text,
     fontWeight: 'bold',
     width: 50,
   },
@@ -708,7 +711,7 @@ const styles = StyleSheet.create({
     width: 70,
   },
   activePlanDayStation: {
-    color: '#cbd5e1',
+    color: theme.text,
     fontSize: 12,
     flex: 1,
   },
@@ -719,29 +722,29 @@ const styles = StyleSheet.create({
   planEditButton: {
     flex: 1,
     height: 44,
-    backgroundColor: '#1e1e2d',
-    borderColor: '#334155',
+    backgroundColor: theme.border,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   planEditText: {
-    color: '#fff',
+    color: theme.text,
     fontWeight: 'bold',
   },
   planDeleteButton: {
     width: 80,
     height: 44,
-    backgroundColor: '#ef444420',
-    borderColor: '#ef4444',
+    backgroundColor: theme.errorBg,
+    borderColor: theme.errorBorder,
     borderWidth: 1,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   planDeleteText: {
-    color: '#ef4444',
+    color: theme.errorText,
     fontWeight: 'bold',
   },
   noPlanBlock: {
@@ -749,7 +752,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   noPlanText: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontSize: 14,
     marginBottom: 16,
     textAlign: 'center',
@@ -766,8 +769,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   listContainer: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     overflow: 'hidden',
@@ -778,7 +781,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#64748b',
+    color: theme.textSecondary,
   },
   tripRow: {
     flexDirection: 'row',
@@ -786,32 +789,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e1e2d',
+    borderBottomColor: theme.border,
   },
   tripDateText: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
     fontWeight: '600',
   },
   tripFollowerText: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontSize: 12,
     marginTop: 2,
   },
   tripStatusBadge: {
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   tripStatusText: {
-    color: '#cbd5e1',
+    color: theme.text,
     fontSize: 10,
     fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: theme.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -819,7 +822,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e1e2d',
+    borderBottomColor: theme.border,
   },
   modalCloseBtn: {
     width: 40,
@@ -828,7 +831,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -836,8 +839,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalConfigCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 12,
     padding: 16,
@@ -849,18 +852,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   configDayName: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
   configDetailsContainer: {
     marginTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#1e1e2d',
+    borderTopColor: theme.border,
     paddingTop: 16,
   },
   configLabel: {
-    color: '#94a3b8',
+    color: theme.textSecondary,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 8,
@@ -874,8 +877,8 @@ const styles = StyleSheet.create({
   roleOptionBtn: {
     flex: 1,
     height: 40,
-    backgroundColor: '#0a0a0f',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.background,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 6,
     justifyContent: 'center',
@@ -886,7 +889,7 @@ const styles = StyleSheet.create({
     borderColor: '#6366f1',
   },
   roleOptionText: {
-    color: '#64748b',
+    color: theme.textSecondary,
     fontWeight: '600',
     fontSize: 12,
   },
@@ -897,8 +900,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#0a0a0f',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.background,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 6,
     height: 44,
@@ -906,17 +909,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalSelectorText: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
   },
   alertInput: {
-    backgroundColor: '#0a0a0f',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.background,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 6,
     height: 44,
     paddingHorizontal: 12,
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
   },
   savePlanBtn: {
@@ -941,8 +944,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   pickerContentCard: {
-    backgroundColor: '#12121a',
-    borderColor: '#1e1e2d',
+    backgroundColor: theme.cardBackground,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 16,
     width: '100%',
@@ -950,7 +953,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   pickerCardTitle: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
@@ -962,21 +965,21 @@ const styles = StyleSheet.create({
   pickerItem: {
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e1e2d',
+    borderBottomColor: theme.border,
   },
   pickerItemText: {
-    color: '#cbd5e1',
+    color: theme.text,
     fontSize: 16,
   },
   pickerCancelBtn: {
-    backgroundColor: '#1e1e2d',
+    backgroundColor: theme.border,
     borderRadius: 8,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
   pickerCancelBtnText: {
-    color: '#fff',
+    color: theme.text,
     fontWeight: 'bold',
   },
 });
