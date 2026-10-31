@@ -7,6 +7,7 @@ import SearchScreen from './SearchScreen';
 import ProfileScreen from './ProfileScreen';
 import SuggestionsScreen from './SuggestionsScreen';
 import LostFoundScreen from './LostFoundScreen';
+import GamesScreen from './GamesScreen';
 
 export default function MainScreen({ navigation }) {
   const [currentTab, setCurrentTab] = useState('home');
@@ -21,6 +22,8 @@ export default function MainScreen({ navigation }) {
         return <LostFoundScreen navigation={navigation} />;
       case 'suggestions':
         return <SuggestionsScreen navigation={navigation} />;
+      case 'games':
+        return <GamesScreen navigation={navigation} />;
       case 'profile':
         return <ProfileScreen navigation={navigation} />;
       default:
