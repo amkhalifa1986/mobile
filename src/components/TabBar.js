@@ -11,6 +11,7 @@ export default function TabBar({ currentTab, setCurrentTab }) {
     { id: 'search', label: t('Search'), icon: 'search-outline', iconActive: 'search' },
     { id: 'lostfound', label: t('lostFound'), icon: 'archive-outline', iconActive: 'archive' },
     { id: 'suggestions', label: t('suggestions'), icon: 'bulb-outline', iconActive: 'bulb' },
+    { id: 'games', label: t('games'), icon: 'game-controller-outline', iconActive: 'game-controller' },
     { id: 'profile', label: t('profile'), icon: 'person-outline', iconActive: 'person' },
   ];
 
@@ -30,7 +31,12 @@ export default function TabBar({ currentTab, setCurrentTab }) {
               size={24}
               color={isActive ? '#6366f1' : '#94a3b8'}
             />
-            <Text style={[styles.label, isActive && styles.labelActive]}>
+            <Text
+              style={[styles.label, isActive && styles.labelActive]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               {tab.label}
             </Text>
             {isActive && <View style={styles.activeIndicator} />}
@@ -60,7 +66,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
+    paddingHorizontal: 2,
     color: '#94a3b8',
     marginTop: 4,
     fontWeight: '500',
