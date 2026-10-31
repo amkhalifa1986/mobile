@@ -1,8 +1,12 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// Use the local IP that works for physical devices
-export const API_BASE_URL = 'http://192.168.1.11:5245';
+// Backend URL. Override per machine in mobile/.env (see .env.example):
+//   EXPO_PUBLIC_API_URL=http://<your-PC-LAN-IP>:5245   (physical phone, same Wi-Fi)
+//   EXPO_PUBLIC_API_URL=http://10.0.2.2:5245           (Android emulator)
+//   EXPO_PUBLIC_API_URL=http://localhost:5245          (iOS simulator / web)
+// Restart Expo with `npx expo start -c` after changing it.
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.11:5245';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
